@@ -1,0 +1,6 @@
+<h1>ログイン</h1>
+<%= form_tag login_path, method: :post do %>
+  <label>名前:</label>
+  <%= text_field_tag :username %>
+  <%= submit_tag "ログイン" %>
+<% end %>

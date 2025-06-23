@@ -1,0 +1,69 @@
+<!-- filepath: c:\Users\user\myapp\app\views\chests\index.html.erb -->
+<h1>宝箱開封シミュレーター</h1>
+<p>宝玉500個の当選確率は <strong>0.08%</strong> です。</p>
+
+<%= form_tag chests_open_path, method: :post, data: { turbo: false } do %>
+  <label>開封する宝箱の数（1～1000）:</label>
+  <%= number_field_tag :count, @count || 1, min: 1, max: 1000 %>
+  <%= submit_tag "宝箱を開ける" %>
+<% end %>
+
+<% if defined?(@results) && @results %>
+  <h2>今回の結果（<%= @count %>回開封）</h2>
+  <% atari_indexes = @results.each_index.select { |i| @results[i] == "宝玉500個" } %>
+  <% if atari_indexes.any? %>
+    <ul>
+      <% atari_indexes.each do |i| %>
+        <li><%= i+1 %>回目：宝玉500個</li>
+      <% end %>
+    </ul>
+    <p>
+      <strong>当たり：</strong>
+      <%= atari_indexes.size %> 回
+    </p>
+  <% else %>
+    <p>当たりはありませんでした。</p>
+  <% end %>
+<% end %>
+
+<% if defined?(@total_count) && defined?(@total_atari) %>
+  <hr>
+  <h3>累積結果</h3>
+  <p>
+    累計開封数：<%= @total_count %> 回<br>
+    累計当たり数：<%= @total_atari %> 回<br>
+    <% rate = @total_count > 0 ? ((@total_atari.to_f / @total_count) * 100).round(4) : 0 %>
+    当たり確率：<%= rate %> %
+  </p>
+  <%# 称号判定 %>
+  <% title =
+    if rate >= 0.14
+      "天下の大将軍級"
+    elsif rate >= 0.12
+      "大将軍級"
+    elsif rate >= 0.10
+      "将軍級"
+    elsif rate >= 0.08
+      "五千人将級"
+    elsif rate >= 0.05
+      "千人将級"
+    elsif rate >= 0.01
+      "伍長級"
+    else
+      "下僕級"
+    end
+  %>
+  <p><strong>あなたは <%= title %> です。</strong></p>
+  <%= form_tag chests_reset_path, method: :post, data: { turbo: false } do %>
+    <%= submit_tag "累計をリセット", style: "background:#e74c3c; color:#fff; border:none; padding:0.5em 1.5em; border-radius:4px; cursor:pointer;" %>
+  <% end %>
+<% end %>
+
+<% top_results = Result.includes(:user).order(rate: :desc).limit(10) %>
+<hr>
+<h3>当たり確率ランキング（上位10名）</h3>
+<ol>
+  <% top_results.each do |r| %>
+    <li><%= r.user.name %> さん：<%= r.rate %> %</li>
+  <% end %>
+</ol>
